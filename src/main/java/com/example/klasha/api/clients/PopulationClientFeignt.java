@@ -21,7 +21,7 @@ import static java.util.Objects.isNull;
 
 @RequiredArgsConstructor
 @Slf4j
-public class PopulationClient {
+public class PopulationClientFeignt {
 
     private final PopulationFeignClient populationFeignClient;
 

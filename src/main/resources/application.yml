@@ -1,6 +1,9 @@
 spring:
   application:
     name: klasha-app-service
+  config:
+    activate:
+      on-profile: dev
 
 server:
   port: 8080
@@ -38,6 +41,8 @@ feign:
 
 population:
   base_url: https://countriesnow.space/api/v0.1/countries
+  connection:
+    time: 30
   countries:
     - Nigeria
     - Ghana
