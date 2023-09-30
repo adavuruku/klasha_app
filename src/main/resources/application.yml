@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: klasha-app-service
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    org.apache.kafka.clients.consumer.internals.ConsumerCoordinator: WARN
+    com.netflix.discovery.shared.resolver.aws.ConfigClusterResolver: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - refresh
+          - health
+          - info
+          - busrefresh
+          - busenv
+  endpoint:
+    health:
+      show-details: always
+  info:
+    git:
+      enabled: true
+
+formatter:
+  time: hh:mm z
+  date: dd/MM/yyyy
+
+feign:
+  client:
+    decodeSlash: false
+
+population:
+  base_url: https://countriesnow.space/api/v0.1/countries
+  countries:
+    - Nigeria
+    - Ghana
+    - New Zealand
