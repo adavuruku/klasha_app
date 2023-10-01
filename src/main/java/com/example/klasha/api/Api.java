@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.ExecutionException;
+
 @RestController
 @RequestMapping("/api/v1/population")
 @RequiredArgsConstructor
@@ -20,7 +22,14 @@ public class Api {
     @GetMapping("/cities/{noOfCities}")
     public ResponseEntity<Response> activateConsumer(@PathVariable Long noOfCities) {
         Response response = new Response(SUCCESSFUL_RESPONSE_CODE, SUCCESSFUL_MESSAGE, null);
-        response.setData(populationService.processPopulationFilter(noOfCities));
+//        populationService.testOkhttp();
+//        try {
+            response.setData(populationService.manyRecord());
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        } catch (ExecutionException e) {
+//            throw new RuntimeException(e);
+//        }
         return ResponseEntity.ok(response);
     }
 
