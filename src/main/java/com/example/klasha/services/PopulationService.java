@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.Resource;
 
@@ -51,7 +53,7 @@ public class PopulationService {
         this.okHttpProcessing = okHttpProcessing;
     }
 
-    public List<PopulationCityResponse> filterPopulation(Long noOfRecord){
+    public List<PopulationCityResponse> filterPopulation(Long noOfRecord) {
 
         try {
             PopulationFilterRequest nigPayload = PopulationFilterRequest.builder()
@@ -71,7 +73,7 @@ public class PopulationService {
             CompletableFuture<String> c2 = okHttpProcessing.post(ghanaPayload, path);
             CompletableFuture<String> c3 = okHttpProcessing.post(newZealandPayload, path);
 
-            CompletableFuture.allOf(c1,c2,c3).join();
+            CompletableFuture.allOf(c1, c2, c3).join();
 
             List<CityRecordDto> allRecord = new ArrayList<>();
             PopulationFilterResponse cObject = null;
@@ -81,13 +83,13 @@ public class PopulationService {
             allRecord.addAll(cObject.getData());
             cObject = objectMapper.readValue(c3.get(), PopulationFilterResponse.class);
             allRecord.addAll(cObject.getData());
-            return Utils.filterPopulation(allRecord, noOfRecord) ;
+            return Utils.filterPopulation(allRecord, noOfRecord);
         } catch (ExecutionException | InterruptedException | JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public CountryDetailResponse getCountryDetails(String country){
+    public CountryDetailResponse getCountryDetails(String country) {
 
         try {
             String path = "/population";
@@ -99,7 +101,7 @@ public class PopulationService {
             // 1. check country exist
             CompletableFuture<String> populationOne = okHttpProcessing.post(requestBody, path);
             CountryPopulationResponse populationOneObject = objectMapper.readValue(populationOne.get(), CountryPopulationResponse.class);
-            if(populationOneObject.getError()){
+            if (populationOneObject.getError()) {
                 throw new NotFoundException(new Object[]{country});
             }
 
@@ -115,7 +117,7 @@ public class PopulationService {
             path = "/currency";
             CompletableFuture<String> currency = okHttpProcessing.post(requestBody, path);
 
-            CompletableFuture.allOf(population,capital,location,currency ).join();
+            CompletableFuture.allOf(population, capital, location, currency).join();
 
 
             CountryPopulationResponse populationObject = objectMapper.readValue(population.get(), CountryPopulationResponse.class);
@@ -147,7 +149,7 @@ public class PopulationService {
         }
     }
 
-    public CountryStateCityResponse getCountryState(String country){
+    public CountryStateCityResponse getCountryState(String country) {
 
         try {
             PopulationFilterRequest payload = PopulationFilterRequest.builder()
@@ -159,7 +161,7 @@ public class PopulationService {
             CompletableFuture<String> state = okHttpProcessing.post(requestBody, path);
             CountryStateResponse stateObject = objectMapper.readValue(state.get(), CountryStateResponse.class);
 
-            if(stateObject.getError()){
+            if (stateObject.getError()) {
                 throw new NotFoundException(new Object[]{country});
             }
 
@@ -188,7 +190,7 @@ public class PopulationService {
             StateCity stateCity = null;
             List<String> resolveFutureItems = allFutureResults.get();
             for (int j = 0; j < resolveFutureItems.size(); j++) {
-                CityResponse cityResponse = objectMapper.readValue(resolveFutureItems.get(j),CityResponse.class);
+                CityResponse cityResponse = objectMapper.readValue(resolveFutureItems.get(j), CityResponse.class);
                 stateCity = new StateCity();
                 stateCity.setState(stateList.get(j));
                 stateCity.setCity(cityResponse.getData());
@@ -201,7 +203,7 @@ public class PopulationService {
         }
     }
 
-    public CurrencyConversionResponse convertCurrency(CountryDetailsRequestDto countryDetailsRequestDto){
+    public CurrencyConversionResponse convertCurrency(CountryDetailsRequestDto countryDetailsRequestDto) {
 
         try {
             PopulationFilterRequest payload = PopulationFilterRequest.builder()
@@ -213,7 +215,7 @@ public class PopulationService {
             CompletableFuture<String> currencyRecord = okHttpProcessing.post(requestBody, path);
             CurrencyResponse stateObject = objectMapper.readValue(currencyRecord.get(), CurrencyResponse.class);
 
-            if(stateObject.getError()){
+            if (stateObject.getError()) {
                 throw new NotFoundException(new Object[]{countryDetailsRequestDto.getCountry()});
             }
 
@@ -225,16 +227,16 @@ public class PopulationService {
                     .filter(p -> ((p.getSourceCountry().equalsIgnoreCase(countryDetailsRequestDto.getTargetCurrency())) &&
                             (p.getTargetCountry().equalsIgnoreCase(stateObject.getData().getCurrency())))).collect(Collectors.toList());
 
-            if(forwardConversion.size()>0 || backwardConversion.size()>0){
+            if (forwardConversion.size() > 0 || backwardConversion.size() > 0) {
                 DecimalFormat df = new DecimalFormat("###.##");
                 String targetCurrency = null;
                 Double convertValue = null;
-                if(backwardConversion.size()>0){
-                    MonetaryExchangeDto monetaryExchangeDto =backwardConversion.get(0);
+                if (backwardConversion.size() > 0) {
+                    MonetaryExchangeDto monetaryExchangeDto = backwardConversion.get(0);
                     convertValue = countryDetailsRequestDto.getAmount() / monetaryExchangeDto.getRate();
                     targetCurrency = monetaryExchangeDto.getSourceCountry();
-                }else{
-                    MonetaryExchangeDto monetaryExchangeDto =forwardConversion.get(0);
+                } else {
+                    MonetaryExchangeDto monetaryExchangeDto = forwardConversion.get(0);
                     convertValue = countryDetailsRequestDto.getAmount() * monetaryExchangeDto.getRate();
                     targetCurrency = monetaryExchangeDto.getTargetCountry();
                 }
@@ -244,16 +246,16 @@ public class PopulationService {
 
                 return currencyConversionResponse;
             }
-
             throw new NotFoundException(new Object[]{"[No exchange record found for conversion]"});
         } catch (ExecutionException | InterruptedException | JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
+
     @Cacheable(value = MONETARY_EXCHANGE_CACHE, sync = true)
-    public List<MonetaryExchangeDto> getBankExchangeSetting(){
+    public List<MonetaryExchangeDto> getBankExchangeSetting() {
         try {
-            List<MonetaryExchangeDto> monetaryData  = new ArrayList<>();
+            List<MonetaryExchangeDto> monetaryData = new ArrayList<>();
             InputStream input = resource.getInputStream();
             File file = resource.getFile();
             CSVReader csvReader = new CSVReader(new FileReader(file));
@@ -261,15 +263,16 @@ public class PopulationService {
             MonetaryExchangeDto monetaryExchangeDto = null;
             int i = 0;
             while ((values = csvReader.readNext()) != null) {
-                if(i > 0){
+                if (i > 0) {
                     monetaryExchangeDto = new MonetaryExchangeDto();
                     monetaryExchangeDto.setSourceCountry(values[0]);
                     monetaryExchangeDto.setTargetCountry(values[1]);
                     monetaryExchangeDto.setRate(Double.parseDouble(values[2]));
                     monetaryData.add(monetaryExchangeDto);
                 }
-                i+=1;
+                i += 1;
             }
+            log.info("Banks {}", monetaryData);
             return monetaryData;
         } catch (CsvValidationException e) {
             throw new RuntimeException(e);
@@ -277,4 +280,7 @@ public class PopulationService {
             throw new RuntimeException(e);
         }
     }
+
+    @CacheEvict(value = MONETARY_EXCHANGE_CACHE, allEntries = true)
+    public void resyncCache(){ log.info("Resyncing response code mapping cache {}", MONETARY_EXCHANGE_CACHE);}
 }

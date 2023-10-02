@@ -4,26 +4,33 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.caffeine.CaffeineCache;
+import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 @Configuration
 @EnableCaching
 public class CaffeineCacheConfig {
     @Bean
-    @Qualifier("caffeineCacheManager")
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("error_mapping_app_setting"); // Define your cache names here
-        cacheManager.setCaffeine(caffeineCacheBuilder());
+        SimpleCacheManager cacheManager = new SimpleCacheManager();
+        List<CaffeineCache> caffeineCaches = new ArrayList<>();
+    //    for (CacheConstant cacheType : CacheConstant.values()) {
+            caffeineCaches.add(new CaffeineCache("monetary_exchange_cache",
+                    Caffeine.newBuilder()
+    //                        .expireAfterWrite(cacheType.getExpires(), TimeUnit.SECONDS)
+                            .maximumSize(500)
+                            .build()));
+    //    }
+        cacheManager.setCaches(caffeineCaches);
         return cacheManager;
-    }
-
-    Caffeine<Object, Object> caffeineCacheBuilder() {
-        return Caffeine.newBuilder()
-                .initialCapacity(100)
-                .maximumSize(500);
     }
 }
 

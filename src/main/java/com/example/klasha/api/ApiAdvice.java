@@ -13,11 +13,16 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.validation.FieldError;
 
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @RestControllerAdvice
@@ -40,7 +45,23 @@ public class ApiAdvice {
                 e.getMessage(), null);
         return ResponseEntity.status(httpStatus).body(response);
     }
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Response>  handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        Response response = new Response(String.valueOf(status.value()),
+                messageSource.getMessage("MissingServletRequestParameterException.message", null,
+                        LocaleContextHolder.getLocale()), null);
+        return ResponseEntity.status(status).body(response);
+    }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Response>  handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        Response response = new Response(String.valueOf(status.value()),
+                messageSource.getMessage("HttpMessageNotReadableException.message", null,
+                        LocaleContextHolder.getLocale()), null);
+        return ResponseEntity.status(status).body(response);
+    }
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Response> handleNotFoundException(NotFoundException e) {
         HttpStatus status = HttpStatus.NOT_FOUND;
@@ -74,6 +95,24 @@ public class ApiAdvice {
         return ResponseEntity.status(status).body(response);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        List<com.example.klasha.exceptions.Error> errors = new ArrayList<>();
+
+        List<String> errorField =ex.getBindingResult().getFieldErrors()
+                .stream().map(FieldError::getField).collect(Collectors.toList());
+
+        for(int i=0; i<ex.getAllErrors().size(); i++){
+            errors.add(new Error(errorField.get(i), ex.getAllErrors().get(i).getDefaultMessage()));
+        }
+
+
+        Response response = new Response(String.valueOf(status.value()),
+                messageSource.getMessage("MethodArgumentNotValidException.message", null,
+                        LocaleContextHolder.getLocale()), errors);
+        return ResponseEntity.status(status).body(response);
+    }
 //    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
 //    @ExceptionHandler(MethodArgumentNotValidException.class)
 //    public ResponseEntity<Map<String, List<String>>> handleConstraintViolation(MethodArgumentNotValidException e) {

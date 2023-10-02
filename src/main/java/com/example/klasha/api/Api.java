@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/klasha")
 @RequiredArgsConstructor
-@Validated
 @Slf4j
+@Validated
 public class Api {
 
     private final PopulationService populationService;
@@ -28,7 +28,6 @@ public class Api {
     //1. Question 1
     @GetMapping("/cities/population")
     public ResponseEntity<Response> filterCitiesPopulation(@RequestParam("noOfCities") @Min(1) Long noOfCities) {
-        log.info("noOfCities {}",noOfCities);
         Response response = new Response(SUCCESSFUL_RESPONSE_CODE, SUCCESSFUL_MESSAGE, null);
         response.setData(populationService.filterPopulation(noOfCities));
         return ResponseEntity.ok(response);
@@ -52,9 +51,16 @@ public class Api {
 
     //4. Question 4
     @PostMapping("/currency/convert")
-    public ResponseEntity<Response> filterCitiesPopulation(@RequestBody() @Validated CountryDetailsRequestDto countryDetailsRequestDto) {
+    public ResponseEntity<Response> filterCitiesPopulation(@Valid @RequestBody() CountryDetailsRequestDto countryDetailsRequestDto) {
         Response response = new Response(SUCCESSFUL_RESPONSE_CODE, SUCCESSFUL_MESSAGE, null);
         response.setData(populationService.convertCurrency(countryDetailsRequestDto));
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/cache/reset")
+    public ResponseEntity<String> resetCache() {
+        Response response = new Response(SUCCESSFUL_RESPONSE_CODE, SUCCESSFUL_MESSAGE, null);
+        populationService.resyncCache();
+        return ResponseEntity.ok("Completed");
     }
 }
