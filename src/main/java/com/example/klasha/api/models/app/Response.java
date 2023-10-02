@@ -1,5 +1,6 @@
 package com.example.klasha.api.models.app;
 
+import com.example.klasha.exceptions.Error;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

@@ -2,9 +2,11 @@ package com.example.klasha.api;
 
 import com.example.klasha.api.models.app.Response;
 import com.example.klasha.exceptions.BadRequestException;
+import com.example.klasha.exceptions.Error;
 import com.example.klasha.exceptions.NotFoundException;
 import com.example.klasha.exceptions.RemoteServerException;
 import com.example.klasha.exceptions.WebServiceException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
@@ -15,7 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 
-import java.util.Objects;
+import java.util.*;
 
 
 @RestControllerAdvice
@@ -25,6 +27,12 @@ public class ApiAdvice {
 
     private final MessageSource messageSource;
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Response> handleException(Exception e) {
+        Response response = new Response(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                messageSource.getMessage("exception.500", null, LocaleContextHolder.getLocale()), null);
+        return ResponseEntity.internalServerError().body(response);
+    }
     @ExceptionHandler(WebServiceException.class)
     public ResponseEntity<Response>  handleWebServiceException(WebServiceException e) {
         HttpStatus httpStatus = e.getHttpStatus();
@@ -65,4 +73,34 @@ public class ApiAdvice {
                         LocaleContextHolder.getLocale()), null);
         return ResponseEntity.status(status).body(response);
     }
+
+//    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+//    @ExceptionHandler(MethodArgumentNotValidException.class)
+//    public ResponseEntity<Map<String, List<String>>> handleConstraintViolation(MethodArgumentNotValidException e) {
+//        HttpStatus status = HttpStatus.UNPROCESSABLE_ENTITY;
+//
+//        List<String> errors = e.getBindingResult().getFieldErrors()
+//                .stream().map(FieldError::getDefaultMessage).collect(Collectors.toList());
+//        return new ResponseEntity<>(getErrorsMap(errors), new HttpHeaders(), HttpStatus.BAD_REQUEST);
+//    }
+//
+//    private Map<String, List<String>> getErrorsMap(List<String> errors) {
+//        Map<String, List<String>> errorResponse = new HashMap<>();
+//        errorResponse.put("errors", errors);
+//        return errorResponse;
+//    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Response> handleBadRequestException(ConstraintViolationException e) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        List<com.example.klasha.exceptions.Error> errorRec = e.getConstraintViolations().stream()
+                .map(ex -> new Error(ex.getPropertyPath().toString(), e.getMessage()))
+                .toList();
+        log.info("message {}", e.getMessage());
+        Response response = new Response(String.valueOf(status.value()),
+                messageSource.getMessage("ConstraintViolationException.message", null,
+                        LocaleContextHolder.getLocale()), errorRec);
+        return ResponseEntity.status(status).body(response);
+    }
+
 }

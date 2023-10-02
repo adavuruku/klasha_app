@@ -2,11 +2,10 @@ package com.example.klasha.api.models.thirdparty.request;
 
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 @Builder
 @Data
-public class PopulationFilterRequest {
+public class CityRequest {
     private String country;
+    private String state;
 }
