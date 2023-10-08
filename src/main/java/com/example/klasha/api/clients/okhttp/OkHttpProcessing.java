@@ -32,12 +32,12 @@ public class OkHttpProcessing {
                 .build();
         OkHttpResponseFuture callback = new OkHttpResponseFuture();
         client.newCall(request).enqueue(callback);
-        try {
-            log.info("Started processing for thread {}", Thread.currentThread().getName());
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            log.info("Started processing for thread {}", Thread.currentThread().getName());
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
         return callback.future.thenApply(response -> {
             try {
                 return response.body().string();
